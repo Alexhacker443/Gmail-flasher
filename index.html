@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Palmpay Gmail Alert System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #222;
+      --primary: #00c292;
+      --secondary: #f0f0f0;
+    }
+
+    body.dark {
+      --bg: #1e1e1e;
+      --text: #f1f1f1;
+      --primary: #00c292;
+      --secondary: #2a2a2a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: 0.3s ease-in-out;
+    }
+
+    .container {
+      background-color: var(--secondary);
+      padding: 35px;
+      border-radius: 12px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      margin-bottom: 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      background: #f9f9f9;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border: 2px solid var(--primary);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #00a982;
+    }
+
+    .status {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .dark-toggle {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 15px;
+    }
+
+    #logArea {
+      margin-top: 20px;
+      background: #eee;
+      padding: 10px;
+      font-size: 13px;
+      border-radius: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .login {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="loginPanel">
+    <h2>🔐 Admin Login</h2>
+    <div class="login">
+      <input type="text" id="adminUser" placeholder="Admin Username" />
+      <input type="password" id="adminPass" placeholder="Password" />
+      <button onclick="login()">Login</button>
+    </div>
+  </div>
+
+  <div class="container hidden" id="mainPanel">
+    <div class="dark-toggle">
+      <button onclick="toggleDark()">🌗 Toggle Dark Mode</button>
+    </div>
+    <h2>📧 Send Gmail Alert</h2>
+    <form id="alertForm">
+      <label for="to_email">Recipient Gmail</label>
+      <input type="email" id="to_email" required placeholder="e.g. user@gmail.com" />
+
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" required placeholder="e.g. 08012345678" />
+
+      <label for="subject">Subject</label>
+      <input type="text" id="subject" required placeholder="Warning: Fee Unpaid" />
+
+      <label for="message">Message</label>
+      <textarea id="message" rows="4" required placeholder="Write your alert message..."></textarea>
+
+      <button type="submit">🚀 Send Alert</button>
+      <div class="status" id="status"></div>
+    </form>
+
+    <div id="logArea"></div>
+    <div class="footer">🔒 Palmpay-style Mail Sender</div>
+  </div>
+
+  <script>
+    // Replace with your own EmailJS credentials
+    emailjs.init("3K8TwmGOt2vFk0Iuz");
+
+    function login() {
+      const user = document.getElementById("adminUser").value;
+      const pass = document.getElementById("adminPass").value;
+      if (user === "admin" && pass === "1234") {
+        document.getElementById("loginPanel").classList.add("hidden");
+        document.getElementById("mainPanel").classList.remove("hidden");
+        loadLogs();
+      } else {
+        alert("❌ Invalid credentials");
+      }
+    }
+
+    function toggleDark() {
+      document.body.classList.toggle("dark");
+    }
+
+    document.getElementById("alertForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const to_email = document.getElementById("to_email").value;
+      const phone = document.getElementById("phone").value;
+      const subject = document.getElementById("subject").value;
+      const message = document.getElementById("message").value;
+      const status = document.getElementById("status");
+
+      status.innerText = "Sending...";
+
+      emailjs.send("service_36c968v", "template_yob3i9e", {
+        to_email: to_email,
+        subject: subject,
+        phone: phone,
+        message: message,
+      })
+      .then(function(response) {
+        status.innerText = "✅ Email alert sent!";
+        saveLog(to_email, subject, phone);
+      }, function(error) {
+        status.innerText = "❌ Failed to send. Check credentials.";
+      });
+
+      document.getElementById("alertForm").reset();
+    });
+
+    function saveLog(email, subject, phone) {
+      const log = { email, subject, phone, time: new Date().toLocaleString() };
+      let logs = JSON.parse(localStorage.getItem("emailLogs") || "[]");
+      logs.unshift(log);
+      localStorage.setItem("emailLogs", JSON.stringify(logs));
+      loadLogs();
+    }
+
+    function loadLogs() {
+      let logs = JSON.parse(localStorage.getItem("emailLogs") || "[]");
+      const area = document.getElementById("logArea");
+      area.innerHTML = "<h4>📜 Sent Logs:</h4>";
+      logs.forEach(log => {
+        area.innerHTML += `<div><strong>${log.email}</strong> | ${log.phone} | ${log.subject} <br/><small>${log.time}</small></div><hr/>`;
+      });
+    }
+  </script>
+</body>
+</html>
